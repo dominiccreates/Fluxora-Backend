@@ -105,11 +105,9 @@ exports.formatRetryPolicy = formatRetryPolicy;
 exports.validateRetryPolicy = validateRetryPolicy;
 
 
-// ---------------------------------------------------------------------------
-// Retry decision helpers
-// ---------------------------------------------------------------------------
-
-/** Return true if the HTTP status code warrants a retry. */
+/**
+ * Determine if a status code is retryable with enhanced logic
+ */
 export function isRetryableStatusCode(
   statusCode: number | undefined,
   policy: EnhancedRetryPolicy = DEFAULT_RETRY_POLICY,
