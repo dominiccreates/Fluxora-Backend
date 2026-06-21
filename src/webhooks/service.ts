@@ -122,6 +122,24 @@ function extractAttemptNumber(payload: unknown): number {
     : 1;
 }
 
+function enqueuePermanentFailureToDlq(
+  delivery: WebhookDelivery,
+  failureReason: string,
+): string | undefined {
+  const alreadyQueued = webhookDeliveryStore
+    .getDeadLetterQueueItems()
+    .some((item) => item.deliveryId === delivery.deliveryId);
+
+  if (alreadyQueued) {
+    logger.warn('Webhook permanent failure already exists in dead-letter queue', undefined, {
+      deliveryId: delivery.deliveryId,
+    });
+    return undefined;
+  }
+
+  return webhookDeliveryStore.addToDeadLetterQueue(delivery, failureReason);
+}
+
 export class WebhookService {
   private policy: EnhancedRetryPolicy;
   private readonly circuitBreakerStore: WebhookCircuitBreakerStore;
@@ -325,6 +343,13 @@ export class WebhookService {
     }
 
     webhookDeliveryStore.store(delivery);
+
+    if (delivery.status === 'permanent_failure') {
+      const failureReason = attempt.error
+        ? `${attempt.error} after ${attemptNumber} attempt${attemptNumber === 1 ? '' : 's'}`
+        : `HTTP ${attempt.statusCode} after ${attemptNumber} attempt${attemptNumber === 1 ? '' : 's'}`;
+      enqueuePermanentFailureToDlq(delivery, failureReason);
+    }
   }
 
   /**
