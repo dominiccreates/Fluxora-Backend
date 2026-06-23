@@ -638,7 +638,7 @@ registry.registerPath({
   summary: 'Read pause flags (no auth)',
   tags: ['admin'],
   responses: {
-    '200': { description: 'Pause flags', content: { 'application/json': { schema: z.object({ pauseFlags: z.record(z.string(), z.boolean()) }) } } },
+    '200': { description: 'Pause flags', content: { 'application/json': { schema: successSchema(z.object({ pauseFlags: z.record(z.string(), z.boolean()) })) } } },
   },
 });
 
@@ -648,7 +648,7 @@ registry.registerPath({
   tags: ['admin'],
   security: [{ bearerAuth: [] }],
   responses: {
-    '200': { description: 'Admin status', content: { 'application/json': { schema: z.object({ pauseFlags: z.record(z.string(), z.boolean()), reindex: z.record(z.string(), z.unknown()) }) } } },
+    '200': { description: 'Admin status', content: { 'application/json': { schema: successSchema(z.object({ pauseFlags: z.record(z.string(), z.boolean()), reindex: z.record(z.string(), z.unknown()) })) } } },
     '401': errorResponses['401'],
   },
 });
@@ -659,7 +659,7 @@ registry.registerPath({
   tags: ['admin'],
   security: [{ bearerAuth: [] }],
   responses: {
-    '200': { description: 'Pause flags', content: { 'application/json': { schema: z.record(z.string(), z.boolean()) } } },
+    '200': { description: 'Pause flags', content: { 'application/json': { schema: successSchema(z.record(z.string(), z.boolean())) } } },
     '401': errorResponses['401'],
   },
 });
@@ -684,7 +684,7 @@ registry.registerPath({
     },
   },
   responses: {
-    '200': { description: 'Updated pause flags', content: { 'application/json': { schema: z.object({ message: z.string(), pauseFlags: z.record(z.string(), z.boolean()) }) } } },
+    '200': { description: 'Updated pause flags', content: { 'application/json': { schema: successSchema(z.object({ message: z.string(), pauseFlags: z.record(z.string(), z.boolean()) })) } } },
     '400': errorResponses['400'],
     '401': errorResponses['401'],
     '503': errorResponses['503'],
@@ -697,7 +697,7 @@ registry.registerPath({
   tags: ['admin'],
   security: [{ bearerAuth: [] }],
   responses: {
-    '200': { description: 'Reindex state', content: { 'application/json': { schema: z.record(z.string(), z.unknown()) } } },
+    '200': { description: 'Reindex state', content: { 'application/json': { schema: successSchema(z.record(z.string(), z.unknown())) } } },
     '401': errorResponses['401'],
   },
 });
@@ -708,9 +708,33 @@ registry.registerPath({
   tags: ['admin'],
   security: [{ bearerAuth: [] }],
   responses: {
-    '202': { description: 'Reindex started', content: { 'application/json': { schema: z.object({ message: z.string(), reindex: z.record(z.string(), z.unknown()) }) } } },
+    '202': { description: 'Reindex started', content: { 'application/json': { schema: successSchema(z.object({ message: z.string(), reindex: z.record(z.string(), z.unknown()) })) } } },
     '401': errorResponses['401'],
     '409': errorResponses['409'],
+  },
+});
+
+registry.registerPath({
+  method: 'post', path: '/api/admin/ws/disconnect',
+  summary: 'Disconnect WebSocket subscribers',
+  tags: ['admin'],
+  security: [{ bearerAuth: [] }],
+  request: {
+    body: {
+      required: true,
+      content: {
+        'application/json': {
+          schema: z.object({ stream_id: z.string().openapi({ example: 'stream-abc123' }) }),
+          example: { stream_id: 'stream-abc123' },
+        },
+      },
+    },
+  },
+  responses: {
+    '200': { description: 'WebSocket subscribers disconnected', content: { 'application/json': { schema: successSchema(z.object({ message: z.string(), stream_id: z.string(), disconnectedCount: z.number().int() })) } } },
+    '400': errorResponses['400'],
+    '401': errorResponses['401'],
+    '503': errorResponses['503'],
   },
 });
 
@@ -720,7 +744,7 @@ registry.registerPath({
   tags: ['admin'],
   security: [{ bearerAuth: [] }],
   responses: {
-    '200': { description: 'API key list', content: { 'application/json': { schema: z.object({ apiKeys: z.array(z.record(z.string(), z.unknown())) }) } } },
+    '200': { description: 'API key list', content: { 'application/json': { schema: successSchema(z.object({ apiKeys: z.array(z.record(z.string(), z.unknown())) })) } } },
     '401': errorResponses['401'],
   },
 });
@@ -734,7 +758,7 @@ registry.registerPath({
     body: { required: true, content: { 'application/json': { schema: z.object({ name: z.string().openapi({ example: 'my-service' }) }) } } },
   },
   responses: {
-    '201': { description: 'API key created (raw key returned once)', content: { 'application/json': { schema: z.record(z.string(), z.unknown()) } } },
+    '201': { description: 'API key created (raw key returned once)', content: { 'application/json': { schema: successSchema(z.record(z.string(), z.unknown())) } } },
     '400': errorResponses['400'],
     '401': errorResponses['401'],
   },
@@ -747,7 +771,7 @@ registry.registerPath({
   security: [{ bearerAuth: [] }],
   request: { params: z.object({ id: z.string() }) },
   responses: {
-    '200': { description: 'New raw key returned once', content: { 'application/json': { schema: z.record(z.string(), z.unknown()) } } },
+    '200': { description: 'New raw key returned once', content: { 'application/json': { schema: successSchema(z.record(z.string(), z.unknown())) } } },
     '401': errorResponses['401'],
     '404': errorResponses['404'],
   },
