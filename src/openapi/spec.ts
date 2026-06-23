@@ -9,8 +9,24 @@ import {
   OpenApiGeneratorV31,
   extendZodWithOpenApi,
 } from '@asteasolutions/zod-to-openapi';
+import { ApiKeyCreatedSchema as _ApiKeyCreatedBase } from '../lib/apiKey.js';
 
 extendZodWithOpenApi(z);
+
+/**
+ * OpenAPI-annotated version of ApiKeyCreatedSchema.
+ * ⚠️  SECURITY: `key` is the plaintext API key shown **exactly once**.
+ */
+const ApiKeyCreatedSchema = _ApiKeyCreatedBase.extend({
+  id: z.string().openapi({ example: 'ck1abc123', description: 'Stable opaque key identifier (cuid2)' }),
+  name: z.string().openapi({ example: 'my-service', description: 'Human-readable label supplied at creation time' }),
+  key: z.string().openapi({
+    example: 'flx_a1b2c3d4...',
+    description: '⚠️ Sensitive – plaintext API key. Returned only at creation/rotation. Store immediately; it will never be shown again.',
+  }),
+  prefix: z.string().openapi({ example: 'flx_a1b2', description: 'First 8 characters of the key for display/lookup' }),
+  createdAt: z.string().openapi({ example: '2026-06-23T14:00:00.000Z', description: 'ISO-8601 creation timestamp' }),
+});
 
 export const registry = new OpenAPIRegistry();
 
@@ -771,7 +787,7 @@ registry.registerPath({
     body: { required: true, content: { 'application/json': { schema: z.object({ name: z.string().openapi({ example: 'my-service' }) }) } } },
   },
   responses: {
-    '201': { description: 'API key created (raw key returned once)', content: { 'application/json': { schema: successSchema(z.record(z.string(), z.unknown())) } } },
+    '201': { description: 'API key created (raw key returned once)', content: { 'application/json': { schema: ApiKeyCreatedSchema } } },
     '400': errorResponses['400'],
     '401': errorResponses['401'],
   },
@@ -784,7 +800,7 @@ registry.registerPath({
   security: [{ bearerAuth: [] }],
   request: { params: z.object({ id: z.string() }) },
   responses: {
-    '200': { description: 'New raw key returned once', content: { 'application/json': { schema: successSchema(z.record(z.string(), z.unknown())) } } },
+    '200': { description: 'New raw key returned once', content: { 'application/json': { schema: ApiKeyCreatedSchema } } },
     '401': errorResponses['401'],
     '404': errorResponses['404'],
   },
