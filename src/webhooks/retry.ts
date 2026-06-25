@@ -134,30 +134,31 @@ export function isRetryableStatusCode(
   return policy.retryableStatusCodes.includes(statusCode);
 }
 
-/** Return the absolute timestamp for the next retry attempt. */
+/**
+ * Calculate the absolute timestamp (ms since epoch) at which the next retry
+ * should be attempted, or 0 if the attempt number has reached maxAttempts.
+ */
 export function calculateNextRetryTime(
   attemptNumber: number,
-  policy: EnhancedRetryPolicy,
-  now: number = Date.now()
+  policy: EnhancedRetryPolicy = DEFAULT_RETRY_POLICY,
+  now: number = Date.now(),
 ): number {
-  const delayMs = applyJitter(calculateBackoffDelay(attemptNumber, policy), policy);
-  return now + delayMs;
+  if (attemptNumber >= policy.maxAttempts) return 0;
+  const raw = calculateBackoffDelay(attemptNumber, policy);
+  const withJitter = applyJitter(raw, policy);
+  return now + Math.round(withJitter);
 }
 
-/** Generate retry metadata for every configured attempt. */
+/**
+ * Generate the full retry schedule for a policy — one entry per attempt.
+ */
 export function generateRetrySchedule(
-  policy: EnhancedRetryPolicy,
-  now: number = Date.now()
+  policy: EnhancedRetryPolicy = DEFAULT_RETRY_POLICY,
+  now: number = Date.now(),
 ): RetrySchedule[] {
-  return Array.from({ length: policy.maxAttempts }, (_, index) => {
-    const attemptNumber = index + 1;
-    const delayMs = applyJitter(calculateBackoffDelay(attemptNumber, policy), policy);
-
-    return {
-      attemptNumber,
-      delayMs,
-      retryAt: now + delayMs,
-    };
+  return Array.from({ length: policy.maxAttempts }, (_, i) => {
+    const delayMs = Math.round(applyJitter(calculateBackoffDelay(i, policy), policy));
+    return { attemptNumber: i + 1, delayMs, retryAt: now + delayMs };
   });
 }
 
